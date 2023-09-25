@@ -1,6 +1,6 @@
 ---
 title: "Assignment 1 - The tidyverse"
-author: "Henry Baker"
+author: "Henry Baker (henrycgbaker)"
 date: "`r format(Sys.time(), '%B %d, %Y | %H:%M:%S | %Z')`"
 output:
   html_document:
@@ -67,10 +67,10 @@ The following tasks will be based on data from the `core` and `political` tables
 ***
 ```{r}
 
-# get "Core" table for the Austrian Nationalrat ------------------------------------------
+# get "Core" table for the Czech legislature
 cze_core <- get_core(legislature = "cze")
 glimpse(cze_core)
-# get "Political" table for the Austrian Nationalrat ------------------------------------------
+# get "Political" table for the Czech legislature
 cze_political <- get_political(legislature = "cze")
 glimpse(cze_political)
 
@@ -79,9 +79,7 @@ glimpse(cze_political)
 ### Task 1 - Descriptives
 
 a) What's the overall share of female legislators in the entire dataset?
-
 ```{r}
-
 female_count <- cze_core |>
   filter(sex == "female") |>
   nrow()
@@ -90,9 +88,14 @@ total_count <- nrow(cze_core)
 
 female_share <- female_count / total_count
 female_share # fema1e share of legislators in Czech Poslanecka Snemovna is 0.19
-round((female_share*100), 2) # fema1e share of legislators in Czech Poslanecka Snemovna is 19.48%
+round((female_share*100), 2) 
 
 ```
+
+<div class = "answer">
+fema1e share of legislators in Czech Poslanecka Snemovna is **19.48%**
+</div>
+
 
 b) How many (both in absolute and relative terms) legislators died in the same place they were born in?
 
@@ -112,6 +115,7 @@ Relative:
 total_dead_by_deathplace <- cze_core |>
   filter(!is.na(birthplace) & !is.na(deathplace)) |>
   nrow()
+# this only includes those legislators who have both their birthplace and deathplace recorded in the analysis.
 
 total_dead_by_dead <- cze_core |>
   filter(!is.na(death)) |>
@@ -121,17 +125,18 @@ total_dead_by_dead <- cze_core |>
 # taking denominator for relative measure respectively as:
 # 1) 
 relative_same_1 <- absolute_same / total_dead_by_deathplace
+relative_same_1 
 # 2) 
 relative_same_2 <- absolute_same / total_dead_by_dead
-relative_same_1 
+relative_same_2
 
 ```
 
 <div class = "answer">
 
-Taking units for which there are values available for both birthplace and deathplace as the pool from which to construct a relative measure, *40%* of legislators died in the same place they were born (6/15).
+Taking units for which there are values available for both birthplace and deathplace as the pool from which to construct a relative measure, **40%** of legislators died in the same place they were born (6/15).
 
-(If we were to take all the dead legislators as the pool then the answer would be 12.5% (6 / 48), however this is a less robust measure, as it may well be that the birth and deathplaces were in fact the same but one (or both) was not recorded for whatever reason)
+*(If we were to take all the dead legislators as the pool then the answer would be 12.5% (6 / 48), however this is a less robust measure, as it may well be that the birth and deathplaces were in fact the same but one (or both) was not recorded for whatever reason)*
 
 </div>
 
@@ -142,7 +147,7 @@ c) Create a new variable `age_at_death` that reports the age at which legislator
 cze_core_2 <- cze_core |>
   filter(!is.na(birth) & !is.na(death)) |>
   mutate(
-    age_at_death = (difftime(death, birth, units = "auto")/365)|>
+    age_at_death = (difftime(death, birth, units = "auto")/365.25)|>
       as.numeric() |>
       round(0)
   )
@@ -152,7 +157,7 @@ fig1 <- ggplot(cze_core_2,
   aes(x = age_at_death)) +
   geom_histogram(binwidth = 2, fill = "pink", colour = "black") +
   theme_minimal() +
-  labs(title = "Fig 1: Distribution of Austrian Legislators' Age at Death",
+  labs(title = "Fig 1: Distribution of Czech Legislators' Age at Death",
        x = "Age at Death (years)",
        y = "Frequency") + 
   theme_minimal()
@@ -177,12 +182,10 @@ bday_frequencies
 
 ```
 <div class = "answer">
-
-1st January 
-
-While perfectly plausible, this seems perhaps too convenient and leads me to wonder if there were issues with the data collection - especially as summer birthdays are statistcally more likely (in Europe). Perhaps 01 January was used as a placeholder if bday was unknown? I'll examine the 2nd most frequent birthday in case.
-
+**January 1st** 
 </div>
+
+While perfectly plausible, this seems perhaps too convenient and leads me to wonder if there were flaws within the data collection process - especially as summer birthdays are statistically more likely (in Europe). Perhaps 01 January was used as a placeholder if bday was unknown? I'll examine the 2nd most frequent birthday in case.
 
 ```{r}
 bday_frequency_2 <- table(cze_core_3$bday) |>
@@ -191,23 +194,22 @@ bday_frequency_2 <- table(cze_core_3$bday) |>
 second_frequency_bday <- bday_frequency_2[2]|>
   names()
 second_frequency_bday
-# 01-10
+# October 1st
 
 ```
 
-This perhaps might in fact be the true value given the data deficiencies here. Without more information it is not possible to make a concrete conclusion.
-Given the most frequent value was 01-01, I'm also slightly suspicious of this value being the 1st of the month (again, perhaps if granular data on the day was unavailable for whatever reason, the first of the month was used). For this reason, I'll also take a quick look at the 3rd most frequent date.
+If we were to discount 01-01, This might in fact be the truer value (given the possible data deficiencies here). Without more information it is not possible to make a concrete conclusion.
+
+Still, as the most frequent value was 01-01, I'm also slightly suspicious of this value being the 1st of the month (again, perhaps if granular data on the exact day was unavailable for whatever reason (privacy?), the first of the month was used). For this reason, I'll also take a quick look at the 3rd most frequent date.
 
 ```{r}
 third_frequency_bday <- bday_frequency_2[3]|>
   names()
 third_frequency_bday
-# 05-12
-
-# this posited phenomenon did not hold up. It is interesting that 2nd and 3rd values are 1st of the month... possible data collection issue?
+# December 5th
 ```
 
-While both the others are completely plausible, this is certainly not a placeholder. 
+While both the 2nd and 3rd most frequently appearing date are completely plausible, this 3rd entry is certainly not a placeholder. 
 01-01 is my answer given the data available, but it's worth considering these other bday dates as well.
 
 
@@ -224,7 +226,7 @@ longest_names <- cze_core_4 |>
   head(5) |>
   select(name, char_length) 
 
-# alternatively use slice functions
+# alternatively I could have used slice functions
 cze_core_4 |>
   slice_max(char_length, n = 5) |>
   select(name, char_length)
@@ -249,16 +251,16 @@ cze_combo_reduced <- cze_combo |>
 unique(cze_combo_reduced$session)
 ```
 
-NB there have only been 9 sessions, this seems suprisingly few for a dataset going back to 1992
+NB there have only been 9 sessions, this seems surprisingly few for a dataset going back to 1992...
 
 ```{r}
-length(unique(cze_combo$session_start))
 # NB there are 29 unique start dates...
-length(unique(cze_combo$session_end))
+length(unique(cze_combo$session_start))
 # NB there are 29 unique end dates...
+length(unique(cze_combo$session_end))
 ```
 
-And there have been 29 unique values for both start & end dates of the session. Worth checking if sessions is correctly coded.
+...and there are 29 unique values for both start & end dates of the sessions. Worth checking if sessions is correctly coded.
 
 ```{r}
 
@@ -271,7 +273,9 @@ fig2 <- ggplot(data = cze_combo, aes(x = session_start), label = Event) +
 
 fig2
 ```
-This timeline shows that in fact the session variable is accurate, and that there have only been 9 unique sessions. The 29 figure from the start/end date measure reflects a data collection issue for the final two sessions.
+<br>
+This timeline shows that in fact the session variable is accurate, and that there have only been 9 unique sessions. 
+The 29 unique values for the start/end date measure reflects a data collection issue for the final two sessions.
 
 
 
@@ -305,8 +309,9 @@ The share of female legislators has on average increased to almost 2.5 times its
 
 b) Explore another relation of variables in the dataset. Your analysis should (i) use data from both the `core` and the `political` table and (ii) feature data from several sessions. Also, offer a brief description and interpretation of your findings! 
 
+Let's explore professions variable.
 ```{r}
-
+# Unfortunately the 'Professions dataset doesn't contain much useful information to work with, so discarding.
 cze_prof <- get_profession(legislature = "cze")
 
 cze_combo_2 <- cze_core |>
@@ -314,18 +319,19 @@ cze_combo_2 <- cze_core |>
   left_join(cze_prof, by = "wikidataid")
 view(cze_combo_2)
 
-# Unfortunately the 'Professions dataset doesn't contain much useful information to work with, so discarding.
 
 cze_combo_3 <- cze_core |>
   left_join(cze_political, by = "pageid") # |>
   # select(- c(1:4), (-1:-3))
-
+```
+Let's explore the ethnicity variable.
+```{r}
+# Unfortunately ethnicity variable also fails to provide analytical purchase as the only valid value is 'white'.
 ethnicity_types <- unique(cze_combo_3$ethnicity)
 ethnicity_types
-# Unfortunately ethnicity variable also fails to provide analytical purchase as the only valid value is 'white'.
-
-# let's explore the relationship between party and share of female legislators
-
+```
+Let's explore the relationship between party and share of female legislators.
+```{r}
 unique_parties <- unique(cze_combo_3$party)
 
 # the below custom function & for loop didn't work, but I want to come back and get it working (hopefully before submission)
@@ -352,15 +358,16 @@ unique_parties <- unique(cze_combo_3$party)
 
 ############################################################### 
 
-
+# rank parties by the amount they appear throughout the dataset across all sessions; 
+# I did this because some parties appear and disappear according to session, so I want to stabilise the units I am examining.
 parties_prop_ungrouped <- prop.table(table(cze_combo_3$party)) |>
   sort(decreasing = T)
 parties_prop_ungrouped
-# this ranks parties by the amount they appear throughout the dataset across all sessions; I did this because some parties appear and disappear according to session, so I want to stabilise the units I am examining.
 
+# returns a vector of the 5 most 'influential' parties 
+# ('influential' understood as having persistent representation... this is of course a very contentious definition, but will do for the purpose of this analysis)
 parties_to_include <- names(parties_prop_ungrouped[1:5])
 parties_to_include
-# this returns a vector of the 5 most 'influential' parties ('influential' understood as having persistent representation... this is of course a very contentious definition, but will do for the purpose of this analysis)
 
 female_share_df <- cze_combo_3 |>
   filter (party %in% parties_to_include) |>
@@ -369,7 +376,6 @@ female_share_df <- cze_combo_3 |>
 glimpse(female_share_df)
 
 # NAs in the female_share variable represent no female legislators, this is problematic for descriptive statistics
-
 female_share_df <- female_share_df |>
   mutate(female_share = ifelse(is.na(female_share), 0, female_share))
 
@@ -408,12 +414,9 @@ party_persistent <- party_persistent |>
 
 print(party_persistent$consistent)
 ```
-<div class = "answer">
 
 it is clear that there are no persistent parties!
 Let's explore a bit more what's going on in the party dynamics.
-
-</div>
 
 ```{r}
 
@@ -465,36 +468,16 @@ As expected, this looks very similar to the previous plot minus ANO. Still it is
 
 I will leave this as my final analysis, but its limitations should be noted. 
 1) This now simply ignores the ANO party, which if we look at the data has recently become a major player in the legislature. 
-2) It's also the case that none of the parties exhibit perfect perseverance, and so when each of them fails to show up in a session it is important not to interprete this as a lack of female legislators for that party for that session, but a lack of overall party presence for that session. 
-In fact, in this sense, it would be better just to look at female share of the legislature as a whole, not conditioning on party given some of the misleading tendenceis of the above. 
+2) It's also the case that none of the parties exhibit perfect perseverance, and so when each of them fails to show up in a session it is important not to interpret this as a lack of female legislators for that party for that session, but a lack of overall party presence for that session. 
+In fact, in this sense, it would be better just to look at female share of the legislature as a whole, not conditioning on party given some of the misleading tendencies of the above. 
 
-Nevertheless, it is best to treat Figure 6 as a complement to Figure 3 which gives a more accurate overall impression of the phenomenon and use Figure 6 to supplement that understanding with a more granular party-based understanding. With that in mind we can say that there isn't a dramatic change in female representation amongst the most persistent parties, and so the trend seen in Figure 3 must by inference be driven by external parties. Ultimately there's not enough data points and too much variance for this to be statistically significant.
+Nevertheless, it is best to treat Figure 6 as a complement to Figure 3 which gives a more accurate overall impression of the phenomenon and use Figure 6 to supplement that understanding with a more granular party-based view With that in mind we can say that there isn't a dramatic change in female representation amongst the most persistent parties, and so the trend seen in Figure 3 must by inference, be driven by external parties. 
+ 
+</div>
 
 <br>
 
 ***
-
-
-#total_legis <- cze_combo |>
-  #group_by(session) |>
-  #count() 
-
-#parties_prop_grouped <- cze_combo_3 %>%
-  #group_by(session, party) %>%
-  #count() %>%
-  #rename(legis_count_by_party = n) %>%
-  #mutate(prop_count_by_party = legis_count_by_party / 218)
-
-
-#parties_prop_grouped <- cze_combo_3 %>%
- # group_by(session, party) %>%
-  #count() %>%
-  #rename(legis_count_by_party = n)
-
-#parties_prop_grouped$prop_count_by_party <- parties_prop_grouped$legis_count_by_party / 218
-
-#female_share_df <- female_share_df |>
- # left_join(parties_prop_grouped, by = c("session"))
 
 
 
